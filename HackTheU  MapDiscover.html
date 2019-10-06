@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Load a basic web scene - 4.12</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.12/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    #titleDiv {
+      background-color: lightgray;
+      color: black;
+      padding: 5px;
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      right: 0;
+      font-size: 20pt;
+      font-weight: bolder;
+      width: 100%;
+      height: 30px;
+      text-align: center;
+      opacity: 0.75;
+    }
+    #logoDiv {
+        padding: 12px;
+        background-color: black;
+        color: pink;
+        text-align: center;
+        width: 100px;
+        margin-left: 700%;
+        margin-top: -200%;
+        font-size: 14pt;
+      }
+  </style>
+
+  <script>
+    require(["esri/Map","esri/views/SceneView", "esri/WebScene", "esri/views/navigation/gamepad/GamepadSettings",
+    "esri/layers/FeatureLayer",
+        "esri/layers/GraphicsLayer",
+        "esri/Graphic"], function (
+      Map,
+      SceneView,
+      WebScene,
+      GamepadSettings,
+      FeatureLayer,
+        GraphicsLayer,
+        Graphic
+    ) {
+      var titleDiv = document.getElementById("titleDiv");
+      var pings = 5;
+      var goal = 50;
+      var countDown = 3;
+
+      // Create set to track discovery
+      var DSet = new Set();
+
+      /************************************************************
+       * Creates a new WebScene instance. A WebScene must reference
+       * a PortalItem ID that represents a WebScene saved to
+       * arcgis.com or an on-premise portal.
+       *
+       * To load a WebScene from an on-premise portal, set the portal
+       * url with esriConfig.portalUrl.
+       ************************************************************/
+      var scene = new WebScene({
+        portalItem: {
+          // autocasts as new PortalItem()
+          id: "c0e78b1e2f204ecfa866e1a75fb9bc67"
+        }
+      });
+      console.log("Passes Scene");
+
+      /************************************************************
+       * Set the WebScene instance to the map property in a SceneView.
+       ************************************************************/
+      var view = new SceneView({
+        map: scene,
+        container: "viewDiv",
+        padding: {
+          top: 40
+        }
+      });
+      console.log("Passes view");
+      var graphicsLayer = new GraphicsLayer();
+        scene.add(graphicsLayer);
+
+
+      view.navigation.gamepad.tiltDirection = "forward-up";
+      
+      var featureLayer;
+      view.when(function () {
+        // when the scene and view resolve, display the scene's
+          // title in the DOM
+          var title = scene.portalItem.title;
+          titleDiv.innerHTML = title;
+          // Reference the feature layer to query
+          // Will be: https://services7.arcgis.com/1EHlBtDZfCcbIqb1/arcgis/rest/services/aaa19f/FeatureServer
+          var layerList = scene.layers;
+          var featureIndex = layerList.findIndex(function(item) {
+            return item.type === "feature";
+          });
+          featureLayer = layerList.getItemAt(featureIndex);
+      });
+
+      view.on("click",function(event){
+        pings--;
+        if(pings <= 0)
+        {
+          pings = 0;
+          document.getElementById("logoDiv").innerHTML = "Game Over!";
+          setInterval(function(){countDown--; if(countDown <= 0){location.replace("file:///C:/Users/jef_l/Documents/GitHub/Finish/GameOver.html");}},1000);
+          
+        }
+        else{
+        document.getElementById("logoDiv").innerHTML = "Pings: " + pings+"<br>"+"Goal: " + goal;
+        }
+        const geom = view.toMap(event);
+        queryFeatureLayer(geom, 0.1, "intersects");
+        });
+
+        graphicsLayer.elevationInfo = {
+          mode: "relative-to-scene"
+        };
+        var verticalOffset = {
+          screenLength: 40,
+          maxWorldLength: 200,
+          minWorldLength: 35
+        };
+        // Function to dispaly graphics returned from querry.
+        function addGraphics(result) {
+          result.features.forEach(function(feature) {
+            console.log(!DSet.has(feature.attributes.poiName));
+            if (!DSet.has(feature.attributes.poiName)){
+              // add to set
+              DSet.add(feature.attributes.poiName);
+              // indicate on map
+              var g = new Graphic({
+                geometry: feature.geometry,
+                attributes: feature.attributes,
+              
+                symbol: {
+                  type: "point-3d", // autocasts as new PointSymbol3D()
+                  symbolLayers: [{
+                    type: "icon", // autocasts as new IconSymbol3DLayer()
+                    resource: { primitive: "circle" },
+                    material: { color: "#D13470" },
+                    size: 20,
+                    outline: {
+                      color: "white",
+                      size: 2
+                    }
+                  }],
+                  verticalOffset: verticalOffset,
+                  callout: {
+                    type: "line", // autocasts as new LineCallout3D()
+                    color: "white",
+                    size: 2,
+                    border: {
+                      color: "#D13470"
+                    }
+                  }
+                },
+              
+                popupTemplate: {
+                  title: "{poiName}",
+                  content: "{address}"
+                }
+              });
+              graphicsLayer.add(g);
+            }
+          });
+        }
+        function queryFeatureLayer(point, distance, spatialRelationship) {
+          var query = featureLayer.createQuery();
+          query.geometry = point;
+          query.distance = distance;
+          query.units = "miles";
+          query.spatialRelationship = spatialRelationship;
+          query.outFields  = ["*"];
+          query.returnGeometry = true;
+          query.where = "topCat IN ('Restaurants and Other Eating Places')";
+          // featureLayer = scene.layers.getItemAt(1);
+          featureLayer.queryFeatures(query).then(function(result) {
+            console.log(result);
+            addGraphics(result);
+          });
+        }
+
+      view.ui.add("logoDiv", "top-left");
+      
+      
+    });
+  </script>
+
+  
+</head>
+
+<body>
+  <div id="viewDiv" class="esri-widget">
+    <div id="titleDiv"></div>
+  </div>
+  <div id="logoDiv" class="esri-widget">Pings: 5<br>Goal: 50</div>
+  
+</body>
+</html>
