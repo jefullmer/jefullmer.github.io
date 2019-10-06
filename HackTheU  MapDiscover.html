@@ -34,35 +34,37 @@
       text-align: center;
       opacity: 0.75;
     }
+
     #logoDiv {
-        padding: 12px;
-        background-color: black;
-        color: pink;
-        text-align: center;
-        width: 100px;
-        margin-left: 700%;
-        margin-top: -200%;
-        font-size: 14pt;
-      }
+      padding: 12px;
+      background-color: black;
+      color: pink;
+      text-align: center;
+      width: 100px;
+      margin-left: 700%;
+      margin-top: -200%;
+      font-size: 14pt;
+    }
   </style>
 
   <script>
-    require(["esri/Map","esri/views/SceneView", "esri/WebScene", "esri/views/navigation/gamepad/GamepadSettings",
-    "esri/layers/FeatureLayer",
-        "esri/layers/GraphicsLayer",
-        "esri/Graphic"], function (
-      Map,
-      SceneView,
-      WebScene,
-      GamepadSettings,
-      FeatureLayer,
+    require(["esri/Map", "esri/views/SceneView", "esri/WebScene", "esri/views/navigation/gamepad/GamepadSettings",
+      "esri/layers/FeatureLayer",
+      "esri/layers/GraphicsLayer",
+      "esri/Graphic"], function (
+        Map,
+        SceneView,
+        WebScene,
+        GamepadSettings,
+        FeatureLayer,
         GraphicsLayer,
         Graphic
-    ) {
+      ) {
       var titleDiv = document.getElementById("titleDiv");
       var pings = 5;
       var goal = 50;
       var countDown = 3;
+      var countUp = 0;
 
       // Create set to track discovery
       var DSet = new Set();
@@ -95,119 +97,128 @@
       });
       console.log("Passes view");
       var graphicsLayer = new GraphicsLayer();
-        scene.add(graphicsLayer);
+      scene.add(graphicsLayer);
 
 
       view.navigation.gamepad.tiltDirection = "forward-up";
-      
+
       var featureLayer;
       view.when(function () {
         // when the scene and view resolve, display the scene's
-          // title in the DOM
-          var title = scene.portalItem.title;
-          titleDiv.innerHTML = title;
-          // Reference the feature layer to query
-          // Will be: https://services7.arcgis.com/1EHlBtDZfCcbIqb1/arcgis/rest/services/aaa19f/FeatureServer
-          var layerList = scene.layers;
-          var featureIndex = layerList.findIndex(function(item) {
-            return item.type === "feature";
-          });
-          featureLayer = layerList.getItemAt(featureIndex);
+        // title in the DOM
+        var title = scene.portalItem.title;
+        titleDiv.innerHTML = title;
+        // Reference the feature layer to query
+        // Will be: https://services7.arcgis.com/1EHlBtDZfCcbIqb1/arcgis/rest/services/aaa19f/FeatureServer
+        var layerList = scene.layers;
+        var featureIndex = layerList.findIndex(function (item) {
+          return item.type === "feature";
+        });
+        featureLayer = layerList.getItemAt(featureIndex);
       });
 
-      view.on("click",function(event){
+      view.on("click", function (event) {
         pings--;
-        if(pings <= 0)
-        {
+        if (pings <= 0) {
           pings = 0;
           document.getElementById("logoDiv").innerHTML = "Game Over!";
-          setInterval(function(){countDown--; if(countDown <= 0){location.replace("https://jefullmer.github.io/GameOver.html");}},1000);
-          
+          setInterval(function () { countDown--; if (countDown <= 0) { location.replace("https://jefullmer.github.io/GameOver.html"); } }, 1000);
+
         }
-        else{
-        document.getElementById("logoDiv").innerHTML = "Pings: " + pings+"<br>"+"Goal: " + goal;
+        else {
+          document.getElementById("logoDiv").innerHTML = "Pings: " + pings + "<br>" + "Goal: " + goal;
         }
         const geom = view.toMap(event);
         queryFeatureLayer(geom, 0.1, "intersects");
-        document.getElementById("logoDiv").innerHTML = "Pings: " + pings+"<br>"+"Goal: " + goal;
-        });
 
-        graphicsLayer.elevationInfo = {
-          mode: "relative-to-scene"
-        };
-        var verticalOffset = {
-          screenLength: 40,
-          maxWorldLength: 200,
-          minWorldLength: 35
-        };
-        // Function to dispaly graphics returned from querry.
-        function addGraphics(result) {
-          result.features.forEach(function(feature) {
-            console.log(!DSet.has(feature.attributes.poiName));
-            if (!DSet.has(feature.attributes.poiName)){
-              // add to set
-              DSet.add(feature.attributes.poiName);
-              goal--;
-              // indicate on map
-              var g = new Graphic({
-                geometry: feature.geometry,
-                attributes: feature.attributes,
-              
-                symbol: {
-                  type: "point-3d", // autocasts as new PointSymbol3D()
-                  symbolLayers: [{
-                    type: "icon", // autocasts as new IconSymbol3DLayer()
-                    resource: { primitive: "circle" },
-                    material: { color: "#D13470" },
-                    size: 20,
-                    outline: {
-                      color: "white",
-                      size: 2
-                    }
-                  }],
-                  verticalOffset: verticalOffset,
-                  callout: {
-                    type: "line", // autocasts as new LineCallout3D()
-                    color: "white",
-                    size: 2,
-                    border: {
-                      color: "#D13470"
-                    }
-                  }
-                },
-              
-                popupTemplate: {
-                  title: "{poiName}",
-                  content: "{address}"
-                }
-              });
-              graphicsLayer.add(g);
+      });
+
+      graphicsLayer.elevationInfo = {
+        mode: "relative-to-scene"
+      };
+      var verticalOffset = {
+        screenLength: 40,
+        maxWorldLength: 200,
+        minWorldLength: 35
+      };
+      // Function to dispaly graphics returned from querry.
+      function addGraphics(result) {
+        result.features.forEach(function (feature) {
+          console.log(!DSet.has(feature.attributes.poiName));
+          if (!DSet.has(feature.attributes.poiName)) {
+            // add to set
+            DSet.add(feature.attributes.poiName);
+            goal--;
+            countUp++;
+            if (countUp >= 7) {
+              pings++;
+              countUp = 0;
             }
-          });
-        }
-        function queryFeatureLayer(point, distance, spatialRelationship) {
-          var query = featureLayer.createQuery();
-          query.geometry = point;
-          query.distance = distance;
-          query.units = "miles";
-          query.spatialRelationship = spatialRelationship;
-          query.outFields  = ["*"];
-          query.returnGeometry = true;
-          query.where = "topCat IN ('Restaurants and Other Eating Places')";
-          // featureLayer = scene.layers.getItemAt(1);
-          featureLayer.queryFeatures(query).then(function(result) {
-            console.log(result);
-            addGraphics(result);
-          });
-        }
+            document.getElementById("logoDiv").innerHTML = "Pings: " + pings + "<br>" + "Goal: " + goal;
+            if (goal <= 0) {
+              document.getElementById("logoDiv").innerHTML = "You Win!";
+          setInterval(function () { countDown--; if (countDown <= 0) { location.replace("https://jefullmer.github.io/index.html"); } }, 1000);
+            }
+            // indicate on map
+            var g = new Graphic({
+              geometry: feature.geometry,
+              attributes: feature.attributes,
+
+              symbol: {
+                type: "point-3d", // autocasts as new PointSymbol3D()
+                symbolLayers: [{
+                  type: "icon", // autocasts as new IconSymbol3DLayer()
+                  resource: { primitive: "circle" },
+                  material: { color: "#D13470" },
+                  size: 20,
+                  outline: {
+                    color: "white",
+                    size: 2
+                  }
+                }],
+                verticalOffset: verticalOffset,
+                callout: {
+                  type: "line", // autocasts as new LineCallout3D()
+                  color: "white",
+                  size: 2,
+                  border: {
+                    color: "#D13470"
+                  }
+                }
+              },
+
+              popupTemplate: {
+                title: "{poiName}",
+                content: "{address}"
+              }
+            });
+            graphicsLayer.add(g);
+          }
+        });
+      }
+      function queryFeatureLayer(point, distance, spatialRelationship) {
+        var query = featureLayer.createQuery();
+        query.geometry = point;
+        query.distance = distance;
+        query.units = "miles";
+        query.spatialRelationship = spatialRelationship;
+        query.outFields = ["*"];
+        query.returnGeometry = true;
+        query.where = "topCat IN ('Restaurants and Other Eating Places')";
+        // featureLayer = scene.layers.getItemAt(1);
+        featureLayer.queryFeatures(query).then(function (result) {
+          console.log(result);
+          addGraphics(result);
+        });
+      }
 
       view.ui.add("logoDiv", "top-left");
-      
-      
+
+
     });
   </script>
 
-  
+
 </head>
 
 <body>
@@ -215,6 +226,7 @@
     <div id="titleDiv"></div>
   </div>
   <div id="logoDiv" class="esri-widget">Pings: 5<br>Goal: 50</div>
-  
+
 </body>
+
 </html>
