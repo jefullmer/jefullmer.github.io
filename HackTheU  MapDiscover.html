@@ -118,6 +118,9 @@
       });
 
       view.on("click", function (event) {
+        
+        const geom = view.toMap(event);
+        queryFeatureLayer(geom, 0.1, "intersects");
         pings--;
         if (pings <= 0) {
           pings = 0;
@@ -128,8 +131,6 @@
         else {
           document.getElementById("logoDiv").innerHTML = "Pings: " + pings + "<br>" + "Goal: " + goal;
         }
-        const geom = view.toMap(event);
-        queryFeatureLayer(geom, 0.1, "intersects");
 
       });
 
