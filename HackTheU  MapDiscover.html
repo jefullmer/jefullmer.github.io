@@ -118,20 +118,20 @@
       });
 
       view.on("click", function (event) {
-        
-        const geom = view.toMap(event);
-        queryFeatureLayer(geom, 0.1, "intersects");
-        pings--;
-        if (pings <= 0) {
-          pings = 0;
-          document.getElementById("logoDiv").innerHTML = "Game Over!";
-          setInterval(function () { countDown--; if (countDown <= 0) { location.replace("https://jefullmer.github.io/GameOver.html"); } }, 1000);
+        if (event.button == 2) {
+          const geom = view.toMap(event);
+          queryFeatureLayer(geom, 0.1, "intersects");
+          pings--
+          if (pings <= 0) {
+            pings = 0;
+            document.getElementById("logoDiv").innerHTML = "Game Over!";
+            setInterval(function () { countDown--; if (countDown <= 0) { location.replace("https://jefullmer.github.io/GameOver.html"); } }, 1000);
 
+          }
+          else {
+            document.getElementById("logoDiv").innerHTML = "Pings: " + pings + "<br>" + "Goal: " + goal;
+          }
         }
-        else {
-          document.getElementById("logoDiv").innerHTML = "Pings: " + pings + "<br>" + "Goal: " + goal;
-        }
-
       });
 
       graphicsLayer.elevationInfo = {
@@ -155,7 +155,7 @@
               pings++;
               countUp = 0;
             }
-            
+
             // indicate on map
             var g = new Graphic({
               geometry: feature.geometry,
@@ -207,10 +207,10 @@
           console.log(result);
           addGraphics(result);
           document.getElementById("logoDiv").innerHTML = "Pings: " + pings + "<br>" + "Goal: " + goal;
-            if (goal <= 0) {
-              document.getElementById("logoDiv").innerHTML = "You Win!";
-          setInterval(function () { countDown--; if (countDown <= 0) { location.replace("https://jefullmer.github.io/index.html"); } }, 1000);
-            }
+          if (goal <= 0) {
+            document.getElementById("logoDiv").innerHTML = "You Win!";
+            setInterval(function () { countDown--; if (countDown <= 0) { location.replace("https://jefullmer.github.io/index.html"); } }, 1000);
+          }
         });
       }
 
