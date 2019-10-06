@@ -125,7 +125,7 @@
           if (pings <= 0) {
             pings = 0;
             document.getElementById("logoDiv").innerHTML = "Game Over!";
-            setInterval(function () { countDown--; if (countDown <= 0) { location.replace("https://jefullmer.github.io/GameOver.html"); } }, 1000);
+            setInterval(function () { if(pings <= 0){countDown--; if (countDown <= 0) { location.replace("https://jefullmer.github.io/GameOver.html"); }} }, 1000);
 
           }
           else {
