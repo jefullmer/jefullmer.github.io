@@ -155,11 +155,7 @@
               pings++;
               countUp = 0;
             }
-            document.getElementById("logoDiv").innerHTML = "Pings: " + pings + "<br>" + "Goal: " + goal;
-            if (goal <= 0) {
-              document.getElementById("logoDiv").innerHTML = "You Win!";
-          setInterval(function () { countDown--; if (countDown <= 0) { location.replace("https://jefullmer.github.io/index.html"); } }, 1000);
-            }
+            
             // indicate on map
             var g = new Graphic({
               geometry: feature.geometry,
@@ -210,6 +206,11 @@
         featureLayer.queryFeatures(query).then(function (result) {
           console.log(result);
           addGraphics(result);
+          document.getElementById("logoDiv").innerHTML = "Pings: " + pings + "<br>" + "Goal: " + goal;
+            if (goal <= 0) {
+              document.getElementById("logoDiv").innerHTML = "You Win!";
+          setInterval(function () { countDown--; if (countDown <= 0) { location.replace("https://jefullmer.github.io/index.html"); } }, 1000);
+            }
         });
       }
 
