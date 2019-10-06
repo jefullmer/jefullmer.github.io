@@ -129,6 +129,7 @@
         }
         const geom = view.toMap(event);
         queryFeatureLayer(geom, 0.1, "intersects");
+        document.getElementById("logoDiv").innerHTML = "Pings: " + pings+"<br>"+"Goal: " + goal;
         });
 
         graphicsLayer.elevationInfo = {
@@ -146,6 +147,7 @@
             if (!DSet.has(feature.attributes.poiName)){
               // add to set
               DSet.add(feature.attributes.poiName);
+              goal--;
               // indicate on map
               var g = new Graphic({
                 geometry: feature.geometry,
